@@ -24,6 +24,7 @@ RUN SECRET_KEY=build-time-placeholder python manage.py collectstatic --noinput |
 
 EXPOSE 8000
 
-CMD python manage.py migrate --noinput && \
-    python setup_tenants.py && \
-    daphne -b 0.0.0.0 -p ${PORT:-8000} pyservice.asgi:application
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
