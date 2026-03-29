@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ company.name }} — PyService Super Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --accent: #e8533f;
+            --accent-hover: #d4412e;
+            --navy: #1a1f36;
+            --text-body: #525770;
+            --text-light: #8891aa;
+            --border: #e6e9ef;
+            --bg-page: #f5f6f8;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(--text-body); min-height: 100vh; }
+        .top-bar { background: var(--navy); color: #fff; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
+        .top-bar-brand { display: flex; align-items: center; gap: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.1rem; font-weight: 800; }
+        .top-bar-badge { background: var(--accent); color: #fff; font-size: 0.62rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-logout { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); border-radius: 7px; padding: 6px 14px; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+        .btn-logout:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+        .page-wrap { max-width: 980px; margin: 40px auto; padding: 0 24px; }
+        .back-link { color: var(--text-light); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px; font-weight: 500; }
+        .back-link:hover { color: var(--navy); }
+        .company-header { background: #fff; border-radius: 14px; border: 1px solid var(--border); padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+        .company-avatar { width: 56px; height: 56px; border-radius: 12px; background: var(--navy); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.4rem; font-weight: 800; flex-shrink: 0; }
+        .company-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--navy); margin: 0; }
+        .company-meta { color: var(--text-light); font-size: 0.85rem; margin-top: 4px; }
+        .badge-demo { background: #fef0ee; color: var(--accent); font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 5px; margin-left: 10px; }
+        .badge-live { background: #ecfdf5; color: #059669; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 5px; margin-left: 10px; }
+        .stat-pill { background: #f5f6f8; border-radius: 8px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600; color: var(--navy); margin-left: auto; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card-wrap { background: #fff; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
+        .card-head { padding: 18px 24px; border-bottom: 1px solid var(--border); }
+        .card-head h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--navy); margin: 0; }
+        .card-head .subtitle { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+        .card-body-pad { padding: 24px; }
+
+        .form-label { font-size: 0.82rem; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+        .form-control { border-radius: 9px; border: 1.5px solid var(--border); padding: 10px 13px; font-size: 0.88rem; font-family: inherit; color: var(--navy); transition: all 0.2s; }
+        .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,83,63,0.08); }
+        .form-text { font-size: 0.75rem; color: var(--text-light); margin-top: 4px; }
+        .btn-create { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 0.88rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 4px; }
+        .btn-create:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,83,63,0.25); }
+
+        .table { margin: 0; }
+        .table thead th { background: #f8f9fb; border-bottom: 2px solid var(--border); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); padding: 10px 16px; }
+        .table tbody td { padding: 12px 16px; border-bottom: 1px solid #f0f2f6; font-size: 0.85rem; vertical-align: middle; }
+        .table tbody tr:last-child td { border-bottom: none; }
+        .badge-role { background: #f0f4ff; color: #3451b2; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+        .badge-admin { background: var(--navy); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+        .empty-small { text-align: center; padding: 28px 16px; color: var(--text-light); font-size: 0.85rem; }
+        .empty-small i { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+        .warning-box { background: #fff9ec; border: 1px solid #f59f00; border-radius: 9px; padding: 12px 16px; font-size: 0.8rem; color: #854d0e; margin-bottom: 18px; }
+        .warning-box i { margin-right: 6px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="white" stroke-width="1.5" fill="none"/><circle cx="12" cy="7" r="1.5" fill="white"/><circle cx="7.5" cy="12" r="1.5" fill="white"/><circle cx="16.5" cy="12" r="1.5" fill="white"/><circle cx="12" cy="17" r="1.5" fill="white"/></svg>
+            PyService
+            <span class="top-bar-badge">Super Admin</span>
+        </div>
+        <a href="{% url 'logout' %}" class="btn-logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+    </div>
+
+    <div class="page-wrap">
+        <a href="{% url 'superadmin_dashboard' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i> Back to Companies
+        </a>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Company Header -->
+        <div class="company-header">
+            <div class="company-avatar">{{ company.name.0|upper }}</div>
+            <div>
+                <h1 class="company-name">
+                    {{ company.name }}
+                    {% if company.is_demo %}
+                    <span class="badge-demo">Demo</span>
+                    {% else %}
+                    <span class="badge-live">Live</span>
+                    {% endif %}
+                </h1>
+                <div class="company-meta">Created {{ company.created_at|date:"d M Y" }} &middot; Slug: {{ company.slug }}</div>
+            </div>
+            <div class="stat-pill ms-auto">
+                <i class="bi bi-people me-1"></i> {{ user_count }} user{{ user_count|pluralize }}
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Create Admin Account -->
+            <div class="card-wrap">
+                <div class="card-head">
+                    <h2><i class="bi bi-person-plus me-2" style="color: var(--accent);"></i>Create Admin Account</h2>
+                    <div class="subtitle">New admin for {{ company.name }} — starts with empty system</div>
+                </div>
+                <div class="card-body-pad">
+                    {% if company.is_demo %}
+                    <div class="warning-box">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        This is the Demo company. New admins here will see demo data.
+                    </div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label" for="id_username">Username</label>
+                            <input type="text" name="username" id="id_username" class="form-control" placeholder="e.g. john_acme" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="id_email">Email</label>
+                            <input type="email" name="email" id="id_email" class="form-control" placeholder="admin@company.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="id_password">Password</label>
+                            <input type="password" name="password" id="id_password" class="form-control" placeholder="Strong password" required>
+                            <div class="form-text">Share this password securely with the client.</div>
+                        </div>
+                        <button type="submit" class="btn-create">
+                            <i class="bi bi-person-plus me-2"></i>Create Admin Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Existing Admins -->
+            <div class="card-wrap">
+                <div class="card-head">
+                    <h2><i class="bi bi-shield-person me-2" style="color: #059669;"></i>Admin Accounts</h2>
+                    <div class="subtitle">Admins with access to {{ company.name }}</div>
+                </div>
+                {% if admins %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in admins %}
+                        <tr>
+                            <td><strong style="color: var(--navy);">{{ admin.username }}</strong></td>
+                            <td style="color: var(--text-light);">{{ admin.email }}</td>
+                            <td><span class="badge-admin">Admin</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-small">
+                    <i class="bi bi-person-x"></i>
+                    No admin accounts yet.<br>Create one using the form.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Users -->
+        {% if recent_users %}
+        <div class="card-wrap mt-4">
+            <div class="card-head">
+                <h2><i class="bi bi-people me-2"></i>Recent Users ({{ user_count }} total)</h2>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in recent_users %}
+                    <tr>
+                        <td><strong style="color: var(--navy);">{{ u.username }}</strong></td>
+                        <td>{{ u.get_full_name|default:"—" }}</td>
+                        <td style="color: var(--text-light);">{{ u.email|default:"—" }}</td>
+                        <td><span class="badge-role">{{ u.get_role_display }}</span></td>
+                        <td style="color: var(--text-light);">{{ u.date_joined|date:"d M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

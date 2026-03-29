@@ -4,7 +4,7 @@ PyService Mini-ITSM Platform
 Role-based dashboard views for different user types
 """
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from incidents.models import Incident
 from service_requests.models import ServiceRequest
@@ -15,12 +15,25 @@ from cmdb.models import Asset
 def dashboard(request):
     """Main dashboard view with role-based content."""
     user = request.user
+
+    # Super admin gets redirected to their own management panel
+    if getattr(user, 'is_super_admin', False):
+        return redirect('superadmin_dashboard')
+
     role = user.role
     
     # Base context
     context = {
         'user_role': role,
     }
+    
+    # Get user's company
+    company = user.company
+    
+    # Base querysets filtered by company
+    incidents_base = Incident.objects.filter(company=company) if company else Incident.objects.none()
+    requests_base = ServiceRequest.objects.filter(company=company) if company else ServiceRequest.objects.none()
+    assets_base = Asset.objects.filter(company=company) if company else Asset.objects.none()
     
     if role == 'admin':
         # Admin sees everything
@@ -31,19 +44,19 @@ def dashboard(request):
         import json
         
         context.update({
-            'open_incidents': Incident.objects.exclude(state__in=['resolved', 'closed']).count(),
-            'critical_incidents': Incident.objects.filter(priority=1).exclude(state__in=['resolved', 'closed']).count(),
-            'pending_requests': ServiceRequest.objects.filter(state='awaiting_approval').count(),
-            'total_assets': Asset.objects.count(),
-            'recent_incidents': Incident.objects.all().order_by('-created_at')[:10],
-            'recent_requests': ServiceRequest.objects.all().order_by('-created_at')[:10],
-            'recent_assets': Asset.objects.all().order_by('-created_at')[:10],
-            'pending_approval_requests': ServiceRequest.objects.filter(state='awaiting_approval')[:5],
-            'sla_breached_incidents': Incident.objects.filter(sla_breached=True).exclude(state__in=['resolved', 'closed'])[:5],
+            'open_incidents': incidents_base.exclude(state__in=['resolved', 'closed']).count(),
+            'critical_incidents': incidents_base.filter(priority=1).exclude(state__in=['resolved', 'closed']).count(),
+            'pending_requests': requests_base.filter(state='awaiting_approval').count(),
+            'total_assets': assets_base.count(),
+            'recent_incidents': incidents_base.all().order_by('-created_at')[:10],
+            'recent_requests': requests_base.all().order_by('-created_at')[:10],
+            'recent_assets': assets_base.all().order_by('-created_at')[:10],
+            'pending_approval_requests': requests_base.filter(state='awaiting_approval')[:5],
+            'sla_breached_incidents': incidents_base.filter(sla_breached=True).exclude(state__in=['resolved', 'closed'])[:5],
         })
         
         # Chart Data 1: Incident States Distribution (Pie Chart)
-        incident_states = Incident.objects.values('state').annotate(count=Count('id'))
+        incident_states = incidents_base.values('state').annotate(count=Count('id'))
         state_labels = []
         state_data = []
         state_colors = {
@@ -83,13 +96,13 @@ def dashboard(request):
             month_label = month_start.strftime('%b %Y')
             months_labels.append(month_label)
             
-            inc_count = Incident.objects.filter(
+            inc_count = incidents_base.filter(
                 created_at__gte=month_start,
                 created_at__lt=month_end
             ).count()
             incidents_by_month.append(inc_count)
             
-            req_count = ServiceRequest.objects.filter(
+            req_count = requests_base.filter(
                 created_at__gte=month_start,
                 created_at__lt=month_end
             ).count()
@@ -102,8 +115,8 @@ def dashboard(request):
         })
         
         # Chart Data 3: SLA Compliance (Doughnut Chart)
-        total_incidents = Incident.objects.count()
-        sla_breached = Incident.objects.filter(sla_breached=True).count()
+        total_incidents = incidents_base.count()
+        sla_breached = incidents_base.filter(sla_breached=True).count()
         sla_compliant = total_incidents - sla_breached
         sla_compliance_pct = round((sla_compliant / total_incidents * 100) if total_incidents > 0 else 100, 1)
         
@@ -120,19 +133,19 @@ def dashboard(request):
         from django.db.models import Count, Q
         
         # Get all IT staff (it_support, technician roles)
-        it_staff = User.objects.filter(role__in=['it_support', 'technician'])
+        it_staff = User.objects.filter(role__in=['it_support', 'technician'], company=company)
         
         # Calculate performance for each staff member
         leaderboard = []
         for staff in it_staff:
             # Count resolved incidents
-            resolved_incidents = Incident.objects.filter(
+            resolved_incidents = incidents_base.filter(
                 assigned_to=staff,
                 state__in=['resolved', 'closed']
             ).count()
             
             # Count completed service requests
-            completed_requests = ServiceRequest.objects.filter(
+            completed_requests = requests_base.filter(
                 assigned_to=staff,
                 state__in=['completed', 'fulfilled', 'closed']
             ).count()
@@ -159,20 +172,20 @@ def dashboard(request):
     elif role == 'staff':
         # Staff sees their own service requests and assets
         # Active/open items first, then resolved
-        my_open_requests = ServiceRequest.objects.filter(
+        my_open_requests = requests_base.filter(
             requester=user
         ).exclude(state__in=['closed', 'fulfilled']).order_by('-created_at')
         
-        my_resolved_requests = ServiceRequest.objects.filter(
+        my_resolved_requests = requests_base.filter(
             requester=user,
             state__in=['closed', 'fulfilled']
         ).order_by('-updated_at')[:5]
         
-        my_active_assets = Asset.objects.filter(
+        my_active_assets = assets_base.filter(
             assigned_to=user
         ).exclude(status__in=['retired']).order_by('-updated_at')
         
-        my_retired_assets = Asset.objects.filter(
+        my_retired_assets = assets_base.filter(
             assigned_to=user,
             status='retired'
         ).order_by('-updated_at')[:5]
@@ -189,20 +202,20 @@ def dashboard(request):
     elif role == 'it_support':
         # IT Support sees active incidents and assets they're working on
         # Active/in-progress items first, then resolved
-        active_incidents = Incident.objects.filter(
+        active_incidents = incidents_base.filter(
             assigned_to=user
         ).exclude(state__in=['resolved', 'closed']).order_by('-priority', '-created_at')
         
-        resolved_incidents = Incident.objects.filter(
+        resolved_incidents = incidents_base.filter(
             assigned_to=user,
             state__in=['resolved', 'closed']
         ).order_by('-updated_at')[:5]
         
-        active_assets = Asset.objects.filter(
+        active_assets = assets_base.filter(
             status__in=['in_repair', 'under_review']
         ).order_by('-updated_at')
         
-        resolved_assets = Asset.objects.filter(
+        resolved_assets = assets_base.filter(
             status__in=['assigned', 'in_stock']
         ).order_by('-updated_at')[:5]
         
@@ -218,29 +231,29 @@ def dashboard(request):
     elif role == 'technician':
         # Technician sees technical incidents and service requests
         # Active/unassigned technical issues first, then assigned ones, then resolved
-        unassigned_incidents = Incident.objects.filter(
+        unassigned_incidents = incidents_base.filter(
             assigned_to__isnull=True
         ).exclude(state__in=['resolved', 'closed']).order_by('-priority', '-created_at')
         
-        my_active_incidents = Incident.objects.filter(
+        my_active_incidents = incidents_base.filter(
             assigned_to=user
         ).exclude(state__in=['resolved', 'closed']).order_by('-priority', '-created_at')
         
-        my_resolved_incidents = Incident.objects.filter(
+        my_resolved_incidents = incidents_base.filter(
             assigned_to=user,
             state__in=['resolved', 'closed']
         ).order_by('-updated_at')[:5]
         
         # Technical service requests (e.g., software installation, hardware setup)
-        unassigned_requests = ServiceRequest.objects.filter(
+        unassigned_requests = requests_base.filter(
             assigned_to__isnull=True
         ).exclude(state__in=['closed', 'fulfilled']).order_by('-created_at')
         
-        my_active_requests = ServiceRequest.objects.filter(
+        my_active_requests = requests_base.filter(
             assigned_to=user
         ).exclude(state__in=['closed', 'fulfilled']).order_by('-created_at')
         
-        my_resolved_requests = ServiceRequest.objects.filter(
+        my_resolved_requests = requests_base.filter(
             assigned_to=user,
             state__in=['closed', 'fulfilled']
         ).order_by('-updated_at')[:5]
@@ -259,13 +272,13 @@ def dashboard(request):
     else:
         # Default view for other roles (technician, manager)
         context.update({
-            'open_incidents': Incident.objects.exclude(state__in=['resolved', 'closed']).count(),
-            'critical_incidents': Incident.objects.filter(priority=1).exclude(state__in=['resolved', 'closed']).count(),
-            'pending_requests': ServiceRequest.objects.filter(state='awaiting_approval').count(),
-            'total_assets': Asset.objects.count(),
-            'recent_incidents': Incident.objects.all().order_by('-created_at')[:5],
-            'pending_approval_requests': ServiceRequest.objects.filter(state='awaiting_approval')[:5],
-            'sla_breached_incidents': Incident.objects.filter(sla_breached=True).exclude(state__in=['resolved', 'closed'])[:5],
+            'open_incidents': incidents_base.exclude(state__in=['resolved', 'closed']).count(),
+            'critical_incidents': incidents_base.filter(priority=1).exclude(state__in=['resolved', 'closed']).count(),
+            'pending_requests': requests_base.filter(state='awaiting_approval').count(),
+            'total_assets': assets_base.count(),
+            'recent_incidents': incidents_base.all().order_by('-created_at')[:5],
+            'pending_approval_requests': requests_base.filter(state='awaiting_approval')[:5],
+            'sla_breached_incidents': incidents_base.filter(sla_breached=True).exclude(state__in=['resolved', 'closed'])[:5],
         })
     
     return render(request, 'dashboard.html', context)
@@ -283,6 +296,8 @@ def staff_leaderboard(request):
     if request.user.role != 'admin':
         messages.error(request, 'Only administrators can access the leaderboard.')
         return redirect('dashboard')
+        
+    company = request.user.company
     
     # Get selected month for filtering
     selected_month = request.GET.get('month', '')
@@ -298,14 +313,14 @@ def staff_leaderboard(request):
     def get_department_leaderboard(department_name, month_filter=None):
         """Calculate leaderboard for a specific department."""
         try:
-            dept = Department.objects.get(name__icontains=department_name)
-            staff = User.objects.filter(department=dept)
+            dept = Department.objects.get(name__icontains=department_name, company=company)
+            staff = User.objects.filter(department=dept, company=company)
         except Department.DoesNotExist:
             # If department doesn't exist, use role-based filtering
             if 'support' in department_name.lower():
-                staff = User.objects.filter(role='it_support')
+                staff = User.objects.filter(role='it_support', company=company)
             else:
-                staff = User.objects.filter(role='technician')
+                staff = User.objects.filter(role='technician', company=company)
         
         leaderboard = []
         for member in staff:
@@ -383,7 +398,7 @@ def staff_leaderboard(request):
         month_label = check_date.strftime('%B %Y')
         
         # Get all IT staff for this month
-        all_staff = User.objects.filter(role__in=['it_support', 'technician'])
+        all_staff = User.objects.filter(role__in=['it_support', 'technician'], company=company)
         month_leaderboard = []
         
         for staff in all_staff:
@@ -450,7 +465,10 @@ def staff_detail(request, user_id):
         messages.error(request, 'Only administrators can access staff details.')
         return redirect('dashboard')
     
-    staff_member = get_object_or_404(User, pk=user_id)
+    company = request.user.company
+    
+    # Ensure they can only see staff in their company
+    staff_member = get_object_or_404(User, pk=user_id, company=company)
     
     # Get all resolved incidents
     resolved_incidents = Incident.objects.filter(

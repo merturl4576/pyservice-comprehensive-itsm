@@ -12,12 +12,15 @@ Complete URL routing including:
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.conf import settings
 from graphene_django.views import GraphQLView
 from django.views.decorators.csrf import csrf_exempt
 
+from pyservice.auth_forms import CompanyAuthenticationForm
+
 from .dashboard import dashboard, staff_leaderboard, staff_detail
+from core.superadmin_views import superadmin_dashboard, company_create, company_detail as superadmin_company_detail
 from .calendar_view import calendar_page, calendar_events_api
 from .sla_dashboard import sla_dashboard
 from .search import global_search
@@ -25,10 +28,10 @@ from .selfservice import selfservice_portal
 
 
 def home(request):
-    """Redirect home to dashboard."""
+    """Show landing page for unauthenticated users, redirect to dashboard for logged-in users."""
     if request.user.is_authenticated:
         return redirect('dashboard')
-    return redirect('login')
+    return render(request, 'landing.html')
 
 
 urlpatterns = [
@@ -40,9 +43,16 @@ urlpatterns = [
     # =========================================================================
     # Authentication
     # =========================================================================
-    path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('login/', auth_views.LoginView.as_view(authentication_form=CompanyAuthenticationForm), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    
+
+    # =========================================================================
+    # Super Admin
+    # =========================================================================
+    path('superadmin/', superadmin_dashboard, name='superadmin_dashboard'),
+    path('superadmin/companies/new/', company_create, name='superadmin_company_create'),
+    path('superadmin/companies/<int:pk>/', superadmin_company_detail, name='superadmin_company_detail'),
+
     # =========================================================================
     # Main Views
     # =========================================================================

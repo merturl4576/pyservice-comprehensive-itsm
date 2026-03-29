@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyService — Enterprise IT Service Management Platform</title>
+    <meta name="description" content="PyService is a production-ready ITSM platform featuring incident management, SLA tracking, remote support, and real-time analytics.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --accent: #e8533f;
+            --accent-hover: #d4412e;
+            --accent-light: #fef0ee;
+            --navy: #1a1f36;
+            --navy-light: #2d3250;
+            --text-dark: #1a1f36;
+            --text-body: #525770;
+            --text-light: #8891aa;
+            --bg-white: #ffffff;
+            --bg-page: #fafbfc;
+            --bg-card: #ffffff;
+            --border: #e6e9ef;
+            --border-light: #f0f2f6;
+            --green: #0bbf6f;
+            --blue: #4c6ef5;
+            --orange: #f59f00;
+            --purple: #7c3aed;
+            --red: #e8533f;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-body);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+        /* ── NAV ── */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            transition: box-shadow 0.3s;
+        }
+        .nav.scrolled { box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+        .nav-inner { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-logo-icon {
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--navy); display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 16px;
+        }
+        .nav-logo-text { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--navy); }
+        .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+        .nav-links a {
+            color: var(--text-body); text-decoration: none; font-size: 0.88rem; font-weight: 500;
+            transition: color 0.2s; position: relative;
+        }
+        .nav-links a:hover { color: var(--navy); }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; text-decoration: none; transition: all 0.2s; cursor: pointer; border: none; }
+        .btn-dark { background: var(--navy); color: #fff; }
+        .btn-dark:hover { background: var(--navy-light); }
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-accent:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(232,83,63,0.3); }
+        .btn-ghost { background: transparent; color: var(--text-body); border: 1px solid var(--border); }
+        .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+
+        /* ── HERO ── */
+        .hero { padding: 120px 0 80px; }
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 5px 14px 5px 6px; border-radius: 50px;
+            background: var(--accent-light); border: 1px solid rgba(232,83,63,0.15);
+            font-size: 0.78rem; color: var(--accent); font-weight: 600; margin-bottom: 20px;
+        }
+        .hero-badge-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; }
+        .hero h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 3.2rem; font-weight: 800; line-height: 1.1;
+            color: var(--navy); margin-bottom: 20px; letter-spacing: -0.02em;
+        }
+        .hero h1 .accent { color: var(--accent); }
+        .hero p { font-size: 1.05rem; color: var(--text-body); max-width: 480px; margin-bottom: 32px; line-height: 1.7; }
+        .hero-actions { display: flex; gap: 12px; align-items: center; margin-bottom: 40px; }
+        .hero-trust { display: flex; align-items: center; gap: 12px; font-size: 0.82rem; color: var(--text-light); }
+        .hero-trust i { color: var(--green); }
+
+        /* Hero Mockup */
+        .hero-mockup {
+            background: var(--bg-white); border-radius: 16px; border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+            overflow: hidden; position: relative;
+        }
+        .mockup-bar { height: 40px; background: #f8f9fb; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 6px; }
+        .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .mockup-dot.r { background: #ff5f57; } .mockup-dot.y { background: #ffbd2e; } .mockup-dot.g { background: #28c840; }
+        .mockup-body { padding: 20px; }
+
+        /* Dashboard mockup inside hero */
+        .mock-dash { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+        .mock-kpi { padding: 12px; border-radius: 10px; color: #fff; }
+        .mock-kpi-val { font-size: 1.4rem; font-weight: 800; }
+        .mock-kpi-label { font-size: 0.65rem; opacity: 0.9; }
+        .mock-kpi.purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+        .mock-kpi.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .mock-kpi.amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .mock-kpi.teal { background: linear-gradient(135deg, #10b981, #059669); }
+
+        .mock-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .mock-chart-card { background: #f8f9fb; border-radius: 10px; padding: 14px; border: 1px solid var(--border-light); }
+        .mock-chart-title { font-size: 0.7rem; font-weight: 600; color: var(--text-dark); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .mock-chart-title i { color: var(--text-light); }
+
+        /* Animated pie */
+        .mini-pie { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto; position: relative; animation: pie-spin 8s linear infinite; }
+        .mini-pie::before { content: ''; position: absolute; inset: 16px; background: #f8f9fb; border-radius: 50%; z-index: 1; }
+        @keyframes pie-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Animated bar chart */
+        .mini-bars { display: flex; align-items: flex-end; gap: 4px; height: 60px; justify-content: center; }
+        .mini-bar { width: 12px; border-radius: 3px 3px 0 0; animation: bar-grow 2s ease-in-out infinite alternate; }
+        @keyframes bar-grow { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }
+
+        /* ── FEATURES ── */
+        .section { padding: 100px 0; }
+        .section-label {
+            display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px;
+            border-radius: 6px; background: var(--accent-light);
+            font-size: 0.75rem; color: var(--accent); font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px;
+        }
+        .section-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 2.4rem; font-weight: 800; color: var(--navy); margin-bottom: 12px; letter-spacing: -0.02em;
+        }
+        .section-sub { font-size: 1.05rem; color: var(--text-body); max-width: 540px; line-height: 1.7; }
+        .section-header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 56px; flex-wrap: wrap; gap: 24px; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .feature-card {
+            background: var(--bg-white); border: 1px solid var(--border);
+            border-radius: 14px; padding: 0; overflow: hidden;
+            transition: all 0.35s ease; position: relative;
+        }
+        .feature-card:hover { border-color: #d0d4de; box-shadow: 0 12px 32px rgba(0,0,0,0.06); transform: translateY(-4px); }
+        .feature-preview {
+            height: 180px; background: #f8f9fb; border-bottom: 1px solid var(--border-light);
+            padding: 16px; overflow: hidden; position: relative;
+        }
+        .feature-info { padding: 20px 22px 24px; }
+        .feature-info h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+        .feature-info p { font-size: 0.85rem; color: var(--text-body); line-height: 1.6; }
+
+        /* ── ANIMATED PREVIEWS ── */
+        /* Incident list preview */
+        .anim-incidents { display: flex; flex-direction: column; gap: 6px; }
+        .anim-incident-row {
+            display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+            background: #fff; border-radius: 8px; border: 1px solid var(--border-light);
+            font-size: 0.68rem; animation: incident-slide 3s ease-in-out infinite;
+        }
+        .anim-incident-row:nth-child(2) { animation-delay: 0.3s; }
+        .anim-incident-row:nth-child(3) { animation-delay: 0.6s; }
+        .anim-incident-row:nth-child(4) { animation-delay: 0.9s; }
+        @keyframes incident-slide { 0%,100% { transform: translateX(0); opacity: 1; } 50% { transform: translateX(4px); opacity: 0.85; } }
+        .anim-status { padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 600; white-space: nowrap; }
+        .anim-status.new { background: #dbeafe; color: #1e40af; }
+        .anim-status.progress { background: #e0e7ff; color: #3730a3; }
+        .anim-status.resolved { background: #d1fae5; color: #065f46; }
+        .anim-priority { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .anim-priority.high { background: #ef4444; }
+        .anim-priority.med { background: #f59e0b; }
+        .anim-priority.low { background: #10b981; }
+        .anim-id { color: var(--text-light); font-weight: 500; width: 52px; flex-shrink: 0; }
+        .anim-title { flex: 1; color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* SLA gauge preview */
+        .anim-sla { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .sla-ring { width: 100px; height: 100px; position: relative; }
+        .sla-ring svg { transform: rotate(-90deg); }
+        .sla-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+        .sla-ring .bg { stroke: #e6e9ef; }
+        .sla-ring .fg { stroke: var(--green); stroke-dasharray: 283; stroke-dashoffset: 42; animation: sla-fill 3s ease-out infinite alternate; }
+        @keyframes sla-fill { from { stroke-dashoffset: 120; stroke: var(--orange); } to { stroke-dashoffset: 42; stroke: var(--green); } }
+        .sla-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+        .sla-labels { display: flex; gap: 16px; margin-top: 12px; }
+        .sla-label { display: flex; align-items: center; gap: 4px; font-size: 0.6rem; color: var(--text-light); }
+        .sla-label-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        /* Remote support chat preview */
+        .anim-chat { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: flex-end; }
+        .chat-bubble {
+            padding: 8px 12px; border-radius: 10px; font-size: 0.68rem; max-width: 80%;
+            animation: chat-pop 0.4s ease-out both;
+        }
+        .chat-bubble.agent { background: var(--navy); color: #fff; align-self: flex-start; border-bottom-left-radius: 3px; }
+        .chat-bubble.user { background: #e8f0fe; color: var(--text-dark); align-self: flex-end; border-bottom-right-radius: 3px; }
+        .chat-bubble:nth-child(1) { animation-delay: 0.2s; }
+        .chat-bubble:nth-child(2) { animation-delay: 0.8s; }
+        .chat-bubble:nth-child(3) { animation-delay: 1.5s; }
+        .chat-bubble:nth-child(4) { animation-delay: 2.2s; }
+        @keyframes chat-pop { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .chat-typing { display: flex; gap: 3px; padding: 8px 14px; align-self: flex-start; animation: chat-pop 0.4s ease-out 2.8s both; }
+        .chat-typing span { width: 5px; height: 5px; border-radius: 50%; background: var(--text-light); animation: typing-dot 1.4s ease-in-out infinite; }
+        .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing-dot { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* CMDB asset list preview */
+        .anim-assets { display: flex; flex-direction: column; gap: 5px; }
+        .anim-asset {
+            display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+            background: #fff; border-radius: 8px; border: 1px solid var(--border-light);
+            font-size: 0.68rem; transition: all 0.3s;
+        }
+        .anim-asset:hover { background: var(--accent-light); }
+        .anim-asset-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; }
+        .anim-asset-name { font-weight: 600; color: var(--text-dark); }
+        .anim-asset-tag { margin-left: auto; padding: 2px 7px; border-radius: 4px; background: #f0f2f6; font-size: 0.58rem; color: var(--text-light); }
+
+        /* Report chart preview */
+        .anim-report { display: flex; flex-direction: column; height: 100%; }
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .report-header span { font-size: 0.7rem; font-weight: 600; color: var(--text-dark); }
+        .report-tabs { display: flex; gap: 4px; }
+        .report-tab { padding: 2px 8px; border-radius: 4px; font-size: 0.58rem; background: #e6e9ef; color: var(--text-light); }
+        .report-tab.active { background: var(--navy); color: #fff; }
+        .report-bars { flex: 1; display: flex; align-items: flex-end; gap: 6px; }
+        .report-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .report-bar { width: 100%; border-radius: 4px 4px 0 0; }
+        .report-bar-label { font-size: 0.55rem; color: var(--text-light); }
+
+        /* Security preview */
+        .anim-security { display: flex; flex-direction: column; gap: 6px; }
+        .sec-item {
+            display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+            background: #fff; border-radius: 8px; border: 1px solid var(--border-light);
+            font-size: 0.68rem;
+        }
+        .sec-check { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; flex-shrink: 0; }
+        .sec-check.ok { background: #d1fae5; color: #059669; }
+        .sec-name { font-weight: 500; color: var(--text-dark); flex: 1; }
+        .sec-badge { padding: 2px 7px; border-radius: 4px; font-size: 0.58rem; font-weight: 600; }
+        .sec-badge.active { background: #d1fae5; color: #065f46; }
+        .sec-pulse { animation: sec-glow 2s ease-in-out infinite; }
+        @keyframes sec-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.2); } 50% { box-shadow: 0 0 0 4px rgba(16,185,129,0.1); } }
+
+        /* ── TECH STACK ── */
+        .tech-section { background: var(--navy); padding: 80px 0; color: #fff; }
+        .tech-section .section-label { background: rgba(255,255,255,0.1); color: #a5b4fc; }
+        .tech-section .section-title { color: #fff; }
+        .tech-section .section-sub { color: rgba(255,255,255,0.6); }
+        .tech-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 48px; }
+        .tech-item {
+            padding: 20px; border-radius: 12px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+            text-align: center; transition: all 0.3s;
+        }
+        .tech-item:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .tech-item i { font-size: 1.5rem; margin-bottom: 8px; display: block; color: rgba(255,255,255,0.7); }
+        .tech-item span { font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.9); }
+
+        /* ── CTA ── */
+        .cta-section { padding: 100px 0; }
+        .cta-box {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+            padding: 64px; border-radius: 20px;
+            background: var(--bg-white); border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+        }
+        .cta-box h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--navy); margin-bottom: 16px; }
+        .cta-box > div:first-child p { color: var(--text-body); line-height: 1.7; margin-bottom: 28px; }
+        .cta-email-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 28px; border-radius: 10px;
+            background: var(--accent); color: #fff;
+            font-size: 1rem; font-weight: 700;
+            text-decoration: none; transition: all 0.3s;
+        }
+        .cta-email-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,83,63,0.3); }
+        .cta-email-btn i { font-size: 1.2rem; }
+
+        .cta-steps { display: flex; flex-direction: column; gap: 24px; }
+        .cta-step { display: flex; gap: 16px; align-items: flex-start; }
+        .cta-step-num {
+            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.85rem;
+        }
+        .cta-step-num.s1 { background: var(--accent-light); color: var(--accent); }
+        .cta-step-num.s2 { background: #dbeafe; color: #2563eb; }
+        .cta-step-num.s3 { background: #d1fae5; color: #059669; }
+        .cta-step h4 { font-size: 0.95rem; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+        .cta-step p { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; }
+
+        /* ── FOOTER ── */
+        .footer { padding: 32px 0; border-top: 1px solid var(--border); }
+        .footer-inner { display: flex; justify-content: space-between; align-items: center; }
+        .footer p { font-size: 0.82rem; color: var(--text-light); }
+        .footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 992px) {
+            .hero-grid { grid-template-columns: 1fr; }
+            .hero-mockup { max-width: 500px; }
+            .features-grid { grid-template-columns: 1fr 1fr; }
+            .tech-grid { grid-template-columns: repeat(3, 1fr); }
+            .cta-box { grid-template-columns: 1fr; padding: 40px; }
+        }
+        @media (max-width: 640px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 2.2rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .tech-grid { grid-template-columns: repeat(2, 1fr); }
+            .section-title { font-size: 1.8rem; }
+            .hero-actions { flex-direction: column; }
+        }
+
+        /* ── Scroll reveal ── */
+        .reveal { opacity: 0; transform: translateY(24px); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal.d1 { transition-delay: 0.1s; } .reveal.d2 { transition-delay: 0.2s; } .reveal.d3 { transition-delay: 0.3s; }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav class="nav" id="mainNav">
+        <div class="container">
+            <div class="nav-inner">
+                <a href="#" class="nav-logo">
+                    <div class="nav-logo-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="white" stroke-width="1.5" fill="none"/><circle cx="12" cy="7" r="1.5" fill="white"/><circle cx="7.5" cy="12" r="1.5" fill="white"/><circle cx="16.5" cy="12" r="1.5" fill="white"/><circle cx="12" cy="17" r="1.5" fill="white"/><line x1="12" y1="7" x2="7.5" y2="12" stroke="white" stroke-width="1" opacity="0.6"/><line x1="12" y1="7" x2="16.5" y2="12" stroke="white" stroke-width="1" opacity="0.6"/><line x1="7.5" y1="12" x2="12" y2="17" stroke="white" stroke-width="1" opacity="0.6"/><line x1="16.5" y1="12" x2="12" y2="17" stroke="white" stroke-width="1" opacity="0.6"/></svg></div>
+                    <span class="nav-logo-text">PyService</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#tech">Technology</a></li>
+                    <li><a href="#access">Request Access</a></li>
+                </ul>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <a href="/login/" class="btn btn-ghost">Sign In</a>
+                    <a href="#access" class="btn btn-accent">Get Access</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div>
+                    <div class="hero-badge">
+                        <span class="hero-badge-dot"><i class="bi bi-lightning-fill"></i></span>
+                        Enterprise-grade platform
+                    </div>
+                    <h1>IT Service<br>Management,<br><span class="accent">simplified.</span></h1>
+                    <p>A production-ready ITSM platform built with Django. Manage incidents, track SLAs, provide remote support, and analyze performance — all from one powerful dashboard.</p>
+                    <div class="hero-actions">
+                        <a href="#access" class="btn btn-accent">Request Access <i class="bi bi-arrow-right"></i></a>
+                        <a href="/login/" class="btn btn-dark"><i class="bi bi-play-circle"></i> Try Demo</a>
+                        <a href="#features" class="btn btn-ghost">Explore Features</a>
+                    </div>
+                    <div class="hero-trust">
+                        <i class="bi bi-check-circle-fill"></i> Production-ready
+                        <i class="bi bi-check-circle-fill" style="margin-left:8px;"></i> REST & GraphQL API
+                        <i class="bi bi-check-circle-fill" style="margin-left:8px;"></i> Docker-ready
+                    </div>
+                </div>
+                <div class="hero-mockup">
+                    <div class="mockup-bar">
+                        <span class="mockup-dot r"></span>
+                        <span class="mockup-dot y"></span>
+                        <span class="mockup-dot g"></span>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mock-dash">
+                            <div class="mock-kpi purple"><div class="mock-kpi-val">12</div><div class="mock-kpi-label">Open Incidents</div></div>
+                            <div class="mock-kpi red"><div class="mock-kpi-val">3</div><div class="mock-kpi-label">Critical (P1)</div></div>
+                            <div class="mock-kpi amber"><div class="mock-kpi-val">8</div><div class="mock-kpi-label">Pending Requests</div></div>
+                            <div class="mock-kpi teal"><div class="mock-kpi-val">47</div><div class="mock-kpi-label">Total Assets</div></div>
+                        </div>
+                        <div class="mock-charts">
+                            <div class="mock-chart-card">
+                                <div class="mock-chart-title"><i class="bi bi-pie-chart"></i> Incident Status</div>
+                                <div class="mini-pie" style="background: conic-gradient(#4c6ef5 0% 35%, #10b981 35% 70%, #f59e0b 70% 100%);"></div>
+                            </div>
+                            <div class="mock-chart-card">
+                                <div class="mock-chart-title"><i class="bi bi-bar-chart"></i> Monthly Trend</div>
+                                <div class="mini-bars">
+                                    <div class="mini-bar" style="height:30px;background:#4c6ef5;animation-delay:0s;"></div>
+                                    <div class="mini-bar" style="height:45px;background:#4c6ef5;animation-delay:0.2s;"></div>
+                                    <div class="mini-bar" style="height:25px;background:#4c6ef5;animation-delay:0.4s;"></div>
+                                    <div class="mini-bar" style="height:55px;background:#e8533f;animation-delay:0.6s;"></div>
+                                    <div class="mini-bar" style="height:40px;background:#4c6ef5;animation-delay:0.8s;"></div>
+                                    <div class="mini-bar" style="height:20px;background:#10b981;animation-delay:1.0s;"></div>
+                                    <div class="mini-bar" style="height:35px;background:#4c6ef5;animation-delay:1.2s;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="section-header-row">
+                <div>
+                    <div class="section-label">Platform Features</div>
+                    <h2 class="section-title">Everything you need for<br>IT operations</h2>
+                    <p class="section-sub">A comprehensive suite of tools designed for modern IT teams to manage, track, and resolve issues efficiently.</p>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <!-- Incident Management -->
+                <div class="feature-card reveal">
+                    <div class="feature-preview">
+                        <div class="anim-incidents">
+                            <div class="anim-incident-row">
+                                <span class="anim-priority high"></span>
+                                <span class="anim-id">INC-0042</span>
+                                <span class="anim-title">Server disk space critical on PROD-DB01</span>
+                                <span class="anim-status new">New</span>
+                            </div>
+                            <div class="anim-incident-row">
+                                <span class="anim-priority med"></span>
+                                <span class="anim-id">INC-0041</span>
+                                <span class="anim-title">VPN connection drops intermittently</span>
+                                <span class="anim-status progress">In Progress</span>
+                            </div>
+                            <div class="anim-incident-row">
+                                <span class="anim-priority low"></span>
+                                <span class="anim-id">INC-0040</span>
+                                <span class="anim-title">Email signature not displaying correctly</span>
+                                <span class="anim-status resolved">Resolved</span>
+                            </div>
+                            <div class="anim-incident-row">
+                                <span class="anim-priority high"></span>
+                                <span class="anim-id">INC-0039</span>
+                                <span class="anim-title">Authentication service timeout errors</span>
+                                <span class="anim-status progress">In Progress</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-info">
+                        <h3>Incident Management</h3>
+                        <p>ITIL-compliant workflow with automatic priority matrix calculation based on impact and urgency levels.</p>
+                    </div>
+                </div>
+
+                <!-- SLA Tracking -->
+                <div class="feature-card reveal d1">
+                    <div class="feature-preview">
+                        <div class="anim-sla">
+                            <div class="sla-ring">
+                                <svg width="100" height="100" viewBox="0 0 100 100">
+                                    <circle class="bg" cx="50" cy="50" r="45"/>
+                                    <circle class="fg" cx="50" cy="50" r="45"/>
+                                </svg>
+                                <div class="sla-val">85%</div>
+                            </div>
+                            <div class="sla-labels">
+                                <div class="sla-label"><span class="sla-label-dot" style="background:var(--green);"></span> Within SLA</div>
+                                <div class="sla-label"><span class="sla-label-dot" style="background:var(--orange);"></span> At Risk</div>
+                                <div class="sla-label"><span class="sla-label-dot" style="background:var(--red);"></span> Breached</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-info">
+                        <h3>SLA Tracking & Alerts</h3>
+                        <p>Automated SLA calculation with breach detection, warning notifications, and compliance dashboards.</p>
+                    </div>
+                </div>
+
+                <!-- Remote Support -->
+                <div class="feature-card reveal d2">
+                    <div class="feature-preview">
+                        <div class="anim-chat">
+                            <div class="chat-bubble agent">Hi! I'm connecting to your workstation now.</div>
+                            <div class="chat-bubble user">Thanks, the screen is frozen.</div>
+                            <div class="chat-bubble agent">I can see the issue. Let me restart the display driver.</div>
+                            <div class="chat-bubble user">It's working now! 🎉</div>
+                            <div class="chat-typing"><span></span><span></span><span></span></div>
+                        </div>
+                    </div>
+                    <div class="feature-info">
+                        <h3>Remote Support Sessions</h3>
+                        <p>Real-time remote assistance with built-in chat, voice-to-text transcription, and AnyDesk integration.</p>
+                    </div>
+                </div>
+
+                <!-- Asset Management -->
+                <div class="feature-card reveal">
+                    <div class="feature-preview">
+                        <div class="anim-assets">
+                            <div class="anim-asset">
+                                <div class="anim-asset-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-laptop"></i></div>
+                                <div><div class="anim-asset-name">MacBook Pro 16"</div><div style="font-size:0.58rem;color:var(--text-light);">Assigned to J. Smith</div></div>
+                                <span class="anim-asset-tag">ASSET-0127</span>
+                            </div>
+                            <div class="anim-asset">
+                                <div class="anim-asset-icon" style="background:#fef3c7;color:#d97706;"><i class="bi bi-display"></i></div>
+                                <div><div class="anim-asset-name">Dell Monitor 27"</div><div style="font-size:0.58rem;color:var(--text-light);">Assigned to A. Johnson</div></div>
+                                <span class="anim-asset-tag">ASSET-0128</span>
+                            </div>
+                            <div class="anim-asset">
+                                <div class="anim-asset-icon" style="background:#d1fae5;color:#059669;"><i class="bi bi-hdd-rack"></i></div>
+                                <div><div class="anim-asset-name">PROD-DB01 Server</div><div style="font-size:0.58rem;color:var(--text-light);">Data Center Rack A3</div></div>
+                                <span class="anim-asset-tag">ASSET-0004</span>
+                            </div>
+                            <div class="anim-asset">
+                                <div class="anim-asset-icon" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-printer"></i></div>
+                                <div><div class="anim-asset-name">HP LaserJet Pro</div><div style="font-size:0.58rem;color:var(--text-light);">Floor 3, Room 302</div></div>
+                                <span class="anim-asset-tag">ASSET-0056</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-info">
+                        <h3>Asset Management (CMDB)</h3>
+                        <p>Complete configuration management database for IT assets with assignment tracking and lifecycle management.</p>
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="feature-card reveal d1">
+                    <div class="feature-preview">
+                        <div class="anim-report">
+                            <div class="report-header">
+                                <span>Incident Trends</span>
+                                <div class="report-tabs">
+                                    <span class="report-tab">Week</span>
+                                    <span class="report-tab active">Month</span>
+                                    <span class="report-tab">Year</span>
+                                </div>
+                            </div>
+                            <div class="report-bars">
+                                <div class="report-bar-group"><div class="report-bar" style="height:40px;background:#4c6ef5;animation:bar-grow 2.5s ease-in-out infinite alternate;"></div><span class="report-bar-label">Oct</span></div>
+                                <div class="report-bar-group"><div class="report-bar" style="height:65px;background:#4c6ef5;animation:bar-grow 2.5s ease-in-out 0.2s infinite alternate;"></div><span class="report-bar-label">Nov</span></div>
+                                <div class="report-bar-group"><div class="report-bar" style="height:50px;background:#4c6ef5;animation:bar-grow 2.5s ease-in-out 0.4s infinite alternate;"></div><span class="report-bar-label">Dec</span></div>
+                                <div class="report-bar-group"><div class="report-bar" style="height:80px;background:#e8533f;animation:bar-grow 2.5s ease-in-out 0.6s infinite alternate;"></div><span class="report-bar-label">Jan</span></div>
+                                <div class="report-bar-group"><div class="report-bar" style="height:55px;background:#4c6ef5;animation:bar-grow 2.5s ease-in-out 0.8s infinite alternate;"></div><span class="report-bar-label">Feb</span></div>
+                                <div class="report-bar-group"><div class="report-bar" style="height:30px;background:#10b981;animation:bar-grow 2.5s ease-in-out 1.0s infinite alternate;"></div><span class="report-bar-label">Mar</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-info">
+                        <h3>Analytics & Reports</h3>
+                        <p>Real-time dashboards with Chart.js visualizations, PDF export, and automated reporting via Celery tasks.</p>
+                    </div>
+                </div>
+
+                <!-- Security -->
+                <div class="feature-card reveal d2">
+                    <div class="feature-preview">
+                        <div class="anim-security">
+                            <div class="sec-item sec-pulse">
+                                <div class="sec-check ok"><i class="bi bi-check"></i></div>
+                                <span class="sec-name">JWT Authentication</span>
+                                <span class="sec-badge active">Active</span>
+                            </div>
+                            <div class="sec-item">
+                                <div class="sec-check ok"><i class="bi bi-check"></i></div>
+                                <span class="sec-name">Two-Factor Auth (TOTP)</span>
+                                <span class="sec-badge active">Active</span>
+                            </div>
+                            <div class="sec-item">
+                                <div class="sec-check ok"><i class="bi bi-check"></i></div>
+                                <span class="sec-name">Rate Limiting</span>
+                                <span class="sec-badge active">Active</span>
+                            </div>
+                            <div class="sec-item">
+                                <div class="sec-check ok"><i class="bi bi-check"></i></div>
+                                <span class="sec-name">Audit Logging</span>
+                                <span class="sec-badge active">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-info">
+                        <h3>Enterprise Security</h3>
+                        <p>JWT authentication, two-factor auth, rate limiting, audit logging, and role-based access control.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section class="tech-section" id="tech">
+        <div class="container">
+            <div style="text-align:center;">
+                <div class="section-label">Technology</div>
+                <h2 class="section-title">Built with a modern stack</h2>
+                <p class="section-sub" style="margin:0 auto;">Enterprise-grade technologies ensuring reliability, scalability, and performance at every layer.</p>
+            </div>
+            <div class="tech-grid reveal">
+                <div class="tech-item"><i class="bi bi-filetype-py"></i><span>Django 4.2</span></div>
+                <div class="tech-item"><i class="bi bi-braces"></i><span>REST Framework</span></div>
+                <div class="tech-item"><i class="bi bi-diagram-3"></i><span>GraphQL</span></div>
+                <div class="tech-item"><i class="bi bi-lightning-charge"></i><span>Celery & Redis</span></div>
+                <div class="tech-item"><i class="bi bi-broadcast"></i><span>WebSockets</span></div>
+                <div class="tech-item"><i class="bi bi-database"></i><span>MySQL</span></div>
+                <div class="tech-item"><i class="bi bi-box-seam"></i><span>Docker</span></div>
+                <div class="tech-item"><i class="bi bi-github"></i><span>CI/CD</span></div>
+                <div class="tech-item"><i class="bi bi-graph-up"></i><span>Prometheus</span></div>
+                <div class="tech-item"><i class="bi bi-search"></i><span>Elasticsearch</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" id="access">
+        <div class="container">
+            <div class="cta-box reveal">
+                <div>
+                    <div class="section-label">Get Started</div>
+                    <h2>Ready to explore<br>the platform?</h2>
+                    <p>Try our demo account instantly to explore the full platform, or request a private account with your own clean workspace.</p>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <a href="/login/" class="cta-email-btn" style="background:var(--navy);">
+                            <i class="bi bi-play-circle"></i> Try Demo Now
+                        </a>
+                        <a href="mailto:merturl67@gmail.com?subject=PyService%20Access%20Request&body=Hello%2C%0A%0AI%20would%20like%20to%20request%20access%20to%20the%20PyService%20ITSM%20Platform.%0A%0AMy%20details%3A%0AName%3A%20%0AOrganization%3A%20%0AReason%3A%20%0A%0AThank%20you." class="cta-email-btn">
+                            <i class="bi bi-envelope"></i> Request Private Account
+                        </a>
+                    </div>
+                </div>
+                <div class="cta-steps">
+                    <div class="cta-step">
+                        <div class="cta-step-num s1">1</div>
+                        <div>
+                            <h4>Try the demo</h4>
+                            <p>Explore the platform instantly with our demo account. No signup required — just click and start exploring.</p>
+                        </div>
+                    </div>
+                    <div class="cta-step">
+                        <div class="cta-step-num s2">2</div>
+                        <div>
+                            <h4>Request your own account</h4>
+                            <p>Send us an email at <strong>merturl67@gmail.com</strong> with your name and organization details.</p>
+                        </div>
+                    </div>
+                    <div class="cta-step">
+                        <div class="cta-step-num s3">3</div>
+                        <div>
+                            <h4>Get a clean workspace</h4>
+                            <p>We'll create your private admin account with a fresh, empty workspace — ready for your own data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-inner">
+                <p>&copy; 2026 <a href="#">PyService</a> — Enterprise ITSM Platform</p>
+                <p>Built with Django & Python</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 10);
+        });
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    </script>
+</body>
+</html>

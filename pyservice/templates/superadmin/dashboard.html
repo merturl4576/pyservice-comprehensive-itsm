@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin — PyService</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --accent: #e8533f;
+            --accent-hover: #d4412e;
+            --navy: #1a1f36;
+            --text-body: #525770;
+            --text-light: #8891aa;
+            --border: #e6e9ef;
+            --bg-page: #f5f6f8;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(--text-body); min-height: 100vh; }
+        .top-bar {
+            background: var(--navy); color: #fff; padding: 0 32px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 62px; position: sticky; top: 0; z-index: 100;
+        }
+        .top-bar-brand { display: flex; align-items: center; gap: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.1rem; font-weight: 800; }
+        .top-bar-badge { background: var(--accent); color: #fff; font-size: 0.62rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .top-bar-right { display: flex; align-items: center; gap: 16px; }
+        .top-bar-user { color: rgba(255,255,255,0.7); font-size: 0.85rem; }
+        .btn-logout { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); border-radius: 7px; padding: 6px 14px; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+        .btn-logout:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+        .page-wrap { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--navy); margin: 0; }
+        .page-subtitle { color: var(--text-light); font-size: 0.88rem; margin-top: 4px; }
+        .btn-new { background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 10px 22px; font-size: 0.88rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s; }
+        .btn-new:hover { background: var(--accent-hover); color: #fff; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(232,83,63,0.25); }
+
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-box { background: #fff; border-radius: 12px; padding: 22px 24px; border: 1px solid var(--border); }
+        .stat-box .val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2rem; font-weight: 800; color: var(--navy); }
+        .stat-box .lbl { font-size: 0.82rem; color: var(--text-light); font-weight: 500; margin-top: 2px; }
+        .stat-box .icon { font-size: 1.6rem; margin-bottom: 8px; }
+
+        .card-wrap { background: #fff; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
+        .card-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .card-head h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--navy); margin: 0; }
+        .table { margin: 0; }
+        .table thead th { background: #f8f9fb; border-bottom: 2px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); padding: 12px 16px; }
+        .table tbody td { padding: 14px 16px; border-bottom: 1px solid #f0f2f6; font-size: 0.88rem; vertical-align: middle; }
+        .table tbody tr:last-child td { border-bottom: none; }
+        .table tbody tr:hover td { background: #fafbfc; }
+        .badge-demo { background: #fef0ee; color: var(--accent); font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
+        .badge-live { background: #ecfdf5; color: #059669; font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
+        .link-manage { color: var(--accent); font-weight: 600; font-size: 0.82rem; text-decoration: none; }
+        .link-manage:hover { color: var(--accent-hover); text-decoration: underline; }
+        .empty-state { text-align: center; padding: 48px 24px; color: var(--text-light); }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="white" stroke-width="1.5" fill="none"/><circle cx="12" cy="7" r="1.5" fill="white"/><circle cx="7.5" cy="12" r="1.5" fill="white"/><circle cx="16.5" cy="12" r="1.5" fill="white"/><circle cx="12" cy="17" r="1.5" fill="white"/></svg>
+            PyService
+            <span class="top-bar-badge">Super Admin</span>
+        </div>
+        <div class="top-bar-right">
+            <span class="top-bar-user"><i class="bi bi-shield-check me-1"></i>{{ request.user.username }}</span>
+            <a href="{% url 'logout' %}" class="btn-logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+        </div>
+    </div>
+
+    <div class="page-wrap">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Company Management</h1>
+                <p class="page-subtitle">Create and manage client companies. Each company gets its own isolated ITSM environment.</p>
+            </div>
+            <a href="{% url 'superadmin_company_create' %}" class="btn-new">
+                <i class="bi bi-plus-lg"></i> New Company
+            </a>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="icon" style="color: var(--navy);"><i class="bi bi-buildings"></i></div>
+                <div class="val">{{ total_companies }}</div>
+                <div class="lbl">Total Companies</div>
+            </div>
+            <div class="stat-box">
+                <div class="icon" style="color: #059669;"><i class="bi bi-people"></i></div>
+                <div class="val">{{ total_users }}</div>
+                <div class="lbl">Total Users (all companies)</div>
+            </div>
+            <div class="stat-box">
+                <div class="icon" style="color: var(--accent);"><i class="bi bi-play-circle"></i></div>
+                <div class="val">1</div>
+                <div class="lbl">Demo Company</div>
+            </div>
+        </div>
+
+        <div class="card-wrap">
+            <div class="card-head">
+                <h2><i class="bi bi-buildings me-2" style="color: var(--accent);"></i>All Companies</h2>
+            </div>
+            {% if companies %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>Type</th>
+                        <th>Users</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--navy);">{{ company.name }}</strong>
+                        </td>
+                        <td>
+                            {% if company.is_demo %}
+                            <span class="badge-demo">Demo</span>
+                            {% else %}
+                            <span class="badge-live">Live</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ company.user_count }}</td>
+                        <td style="color: var(--text-light);">{{ company.created_at|date:"d M Y" }}</td>
+                        <td>
+                            <a href="{% url 'superadmin_company_detail' company.pk %}" class="link-manage">
+                                <i class="bi bi-gear me-1"></i>Manage
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-buildings"></i>
+                No companies yet. <a href="{% url 'superadmin_company_create' %}" style="color: var(--accent); font-weight: 600;">Create the first one.</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

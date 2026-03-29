@@ -1,0 +1,129 @@
+[
+{
+  "model": "knowledge.category",
+  "pk": 1,
+  "fields": {
+    "name": "Hardware",
+    "description": "Hardware troubleshooting and guides",
+    "icon": "bi-laptop",
+    "order": 0,
+    "created_at": "2026-02-09T14:39:11.243Z"
+  }
+},
+{
+  "model": "knowledge.category",
+  "pk": 2,
+  "fields": {
+    "name": "Software",
+    "description": "Software installation and usage",
+    "icon": "bi-code-square",
+    "order": 0,
+    "created_at": "2026-02-09T14:39:11.276Z"
+  }
+},
+{
+  "model": "knowledge.category",
+  "pk": 3,
+  "fields": {
+    "name": "Network",
+    "description": "Network connectivity and VPN",
+    "icon": "bi-wifi",
+    "order": 0,
+    "created_at": "2026-02-09T14:39:11.283Z"
+  }
+},
+{
+  "model": "knowledge.category",
+  "pk": 4,
+  "fields": {
+    "name": "Security",
+    "description": "Security policies and best practices",
+    "icon": "bi-shield-lock",
+    "order": 0,
+    "created_at": "2026-02-09T14:39:11.290Z"
+  }
+},
+{
+  "model": "knowledge.category",
+  "pk": 5,
+  "fields": {
+    "name": "Test Category",
+    "description": "",
+    "icon": "bi-folder",
+    "order": 0,
+    "created_at": "2026-02-09T14:40:07.968Z"
+  }
+},
+{
+  "model": "knowledge.article",
+  "pk": 1,
+  "fields": {
+    "title": "How to Request a New Laptop",
+    "slug": "how-to-request-a-new-laptop",
+    "category": 1,
+    "content": "\n<h3>Laptop Request Process</h3>\n<p>If your current laptop is outdated or broken, you can request a replacement through the Self-Service Portal.</p>\n<ol>\n    <li>Go to <strong>Service Requests</strong> in the sidebar.</li>\n    <li>Click on <strong>New Request</strong>.</li>\n    <li>Select <strong>Hardware Request</strong> from the dropdown.</li>\n    <li>Fill in the justification field explaining why a replacement is needed.</li>\n</ol>\n<div class=\"alert alert-info\">\n    <strong>Note:</strong> Requests need manager approval before they are processed by IT.\n</div>\n                ",
+    "summary": "Step-by-step guide to requesting a new laptop from IT.",
+    "author": 1,
+    "is_published": true,
+    "is_featured": true,
+    "view_count": 0,
+    "helpful_count": 0,
+    "created_at": "2026-02-09T14:39:11.297Z",
+    "updated_at": "2026-02-09T14:39:11.297Z"
+  }
+},
+{
+  "model": "knowledge.article",
+  "pk": 2,
+  "fields": {
+    "title": "VPN Connection Issues",
+    "slug": "vpn-connection-issues",
+    "category": 3,
+    "content": "\n<h3>Troubleshooting VPN</h3>\n<p>If you are unable to connect to the corporate VPN, try the following steps:</p>\n<ul>\n    <li>Check your internet connection.</li>\n    <li>Verify your MFA token code is correct.</li>\n    <li>Restart the VPN client.</li>\n</ul>\n<p>If the issue persists, please submit an <strong>Incident</strong> ticket with the error code displayed.</p>\n                ",
+    "summary": "Common solutions for VPN connectivity problems.",
+    "author": 1,
+    "is_published": true,
+    "is_featured": true,
+    "view_count": 0,
+    "helpful_count": 0,
+    "created_at": "2026-02-09T14:39:11.305Z",
+    "updated_at": "2026-02-09T14:39:11.305Z"
+  }
+},
+{
+  "model": "knowledge.article",
+  "pk": 3,
+  "fields": {
+    "title": "Password Reset Guidelines",
+    "slug": "password-reset-guidelines",
+    "category": 4,
+    "content": "\n<h3>Password Policy</h3>\n<p>Passwords must be updated every 90 days. A valid password must contain:</p>\n<ul>\n    <li>At least 12 characters</li>\n    <li>One uppercase letter</li>\n    <li>One number</li>\n    <li>One special character</li>\n</ul>\n<p>To reset your password, click on your profile icon and select <strong>Role: Admin</strong> > <strong>Change Password</strong> (if applicable) or contact the Service Desk.</p>\n                ",
+    "summary": "How to reset your password and security policies.",
+    "author": 1,
+    "is_published": true,
+    "is_featured": false,
+    "view_count": 0,
+    "helpful_count": 0,
+    "created_at": "2026-02-09T14:39:11.311Z",
+    "updated_at": "2026-02-09T14:39:11.311Z"
+  }
+},
+{
+  "model": "knowledge.article",
+  "pk": 4,
+  "fields": {
+    "title": "Installing Office 365",
+    "slug": "installing-office-365",
+    "category": 2,
+    "content": "\n<h3>Office 365 Installation</h3>\n<p>All employees are licensed for Office 365. To install:</p>\n<ol>\n    <li>Login to <a href=\"https://portal.office.com\" target=\"_blank\">portal.office.com</a> with your company email.</li>\n    <li>Click \"Install Office\" in the top right corner.</li>\n    <li>Run the downloaded installer.</li>\n</ol>\n                ",
+    "summary": "Guide to installing Office 365 apps on your workstation.",
+    "author": 1,
+    "is_published": true,
+    "is_featured": false,
+    "view_count": 0,
+    "helpful_count": 0,
+    "created_at": "2026-02-09T14:39:11.318Z",
+    "updated_at": "2026-02-09T14:39:11.318Z"
+  }
+}
+]
