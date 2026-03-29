@@ -7,6 +7,7 @@ def load_fixture(apps, schema_editor):
     call_command('loaddata', 'initial_kb_data.json')
 
 class Migration(migrations.Migration):
+    atomic = False  # loaddata requires running outside atomic transaction
 
     dependencies = [
         ('knowledge', '0001_initial'),
