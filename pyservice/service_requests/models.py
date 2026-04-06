@@ -109,6 +109,11 @@ class ServiceRequest(models.Model):
     fulfillment_notes = models.TextField(blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     
+    # Company (tenant)
+    company = models.ForeignKey(
+        'cmdb.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='service_requests'
+    )
+    
     # Audit fields
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

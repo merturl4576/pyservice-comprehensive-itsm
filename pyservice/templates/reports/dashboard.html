@@ -21,7 +21,7 @@
                 </div>
             </div>
             <div class="card-footer bg-white bg-opacity-10 border-0">
-                <a href="{% url 'export_incidents' %}"
+                <a href="{% url 'export_incidents' %}" download="incidents_export.csv"
                     class="text-white text-decoration-none d-flex justify-content-between align-items-center">
                     Export CSV <i class="bi bi-cloud-arrow-down-fill"></i>
                 </a>
@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="card-footer bg-white bg-opacity-10 border-0">
-                <a href="{% url 'export_requests' %}"
+                <a href="{% url 'export_requests' %}" download="requests_export.csv"
                     class="text-white text-decoration-none d-flex justify-content-between align-items-center">
                     Export CSV <i class="bi bi-cloud-arrow-down-fill"></i>
                 </a>
@@ -63,7 +63,7 @@
                 </div>
             </div>
             <div class="card-footer bg-white bg-opacity-10 border-0">
-                <a href="{% url 'export_assets' %}"
+                <a href="{% url 'export_assets' %}" download="assets_export.csv"
                     class="text-white text-decoration-none d-flex justify-content-between align-items-center">
                     Export CSV <i class="bi bi-cloud-arrow-down-fill"></i>
                 </a>

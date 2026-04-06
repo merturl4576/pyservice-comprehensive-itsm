@@ -11,7 +11,10 @@ from django.utils import timezone
 
 class Category(models.Model):
     """Knowledge Base Category."""
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+    company = models.ForeignKey(
+        'cmdb.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='kb_categories'
+    )
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, default='bi-folder')
     order = models.IntegerField(default=0)
@@ -32,7 +35,7 @@ class Category(models.Model):
 class Article(models.Model):
     """Knowledge Base Article."""
     title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -47,6 +50,9 @@ class Article(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='kb_articles'
+    )
+    company = models.ForeignKey(
+        'cmdb.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='kb_articles'
     )
     
     is_published = models.BooleanField(default=False)

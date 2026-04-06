@@ -31,6 +31,9 @@ class Notification(models.Model):
         on_delete=models.CASCADE,
         related_name='notifications'
     )
+    company = models.ForeignKey(
+        'cmdb.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications'
+    )
     notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES, default='general')
     title = models.CharField(max_length=200)
     message = models.TextField()
@@ -53,8 +56,10 @@ class Notification(models.Model):
     @classmethod
     def create_notification(cls, user, notification_type, title, message, link=''):
         """Create a notification for a user."""
+        company = user.company if hasattr(user, 'company') else None
         return cls.objects.create(
             user=user,
+            company=company,
             notification_type=notification_type,
             title=title,
             message=message,

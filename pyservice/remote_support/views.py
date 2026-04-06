@@ -16,10 +16,11 @@ from .models import RemoteSupportSession, SessionMessage, VoiceTranscript
 
 def is_support_staff(user):
     """Check if user is IT support staff."""
-    if user.role == 'admin':
+    if user.role in ['admin', 'it_support', 'technician']:
         return True
     if user.department:
-        return user.department.code in ['IT_DEPARTMENT', 'SERVICENOW_SUPPORT']
+        # Fallback for old department codes
+        return user.department.code in ['IT_DEPARTMENT', 'SERVICENOW_SUPPORT', 'IT_SUPPORT']
     return False
 
 
@@ -40,6 +41,7 @@ def request_support(request):
         if subject and description and anydesk_id:
             session = RemoteSupportSession.objects.create(
                 requester=request.user,
+                company=request.user.company,
                 subject=subject,
                 description=description,
                 priority=priority,
@@ -67,19 +69,22 @@ def support_queue(request):
         messages.error(request, 'Access denied. IT staff only.')
         return redirect('dashboard')
     
-    pending = RemoteSupportSession.objects.filter(status='pending').order_by('-priority', 'created_at')
+    company = request.user.company
+    pending = RemoteSupportSession.objects.filter(status='pending', company=company).order_by('-priority', 'created_at')
     active = RemoteSupportSession.objects.filter(
         status__in=['accepted', 'in_progress'],
-        technician=request.user
+        technician=request.user,
+        company=company
     )
     
     if request.user.role == 'admin':
-        completed = RemoteSupportSession.objects.filter(status='completed').order_by('-completed_at')[:50]
+        completed = RemoteSupportSession.objects.filter(status='completed', company=company).order_by('-completed_at')[:50]
     else:
         # Non-admin staff only see their own completed sessions
         completed = RemoteSupportSession.objects.filter(
             status='completed', 
-            technician=request.user
+            technician=request.user,
+            company=company
         ).order_by('-completed_at')[:50]
     
     return render(request, 'remote_support/queue.html', {
@@ -97,7 +102,7 @@ def accept_session(request, session_code):
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
     
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     if session.accept(request.user):
         messages.success(request, f'Session {session_code} accepted!')
@@ -110,7 +115,7 @@ def accept_session(request, session_code):
 @login_required
 def session_room(request, session_code):
     """The support session room with chat."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Check access: only requester, technician, or admin can view
     if request.user != session.requester and request.user != session.technician:
@@ -135,7 +140,7 @@ def session_room(request, session_code):
 @require_POST
 def send_message(request, session_code):
     """Send a chat message in the session."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Check access
     if request.user != session.requester and request.user != session.technician:
@@ -165,7 +170,7 @@ def send_message(request, session_code):
 @login_required
 def get_messages(request, session_code):
     """Get new messages for the session (AJAX polling)."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     last_id = int(request.GET.get('last_id', 0))
     
     new_messages = session.messages.filter(id__gt=last_id)
@@ -191,7 +196,7 @@ def get_messages(request, session_code):
 @require_POST
 def complete_session(request, session_code):
     """Complete the support session."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     if request.user != session.technician and not is_support_staff(request.user):
         messages.error(request, 'Only the technician can complete this session.')
@@ -210,7 +215,7 @@ def complete_session(request, session_code):
 @require_POST
 def cancel_session(request, session_code):
     """Cancel a support session."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Requester or technician can cancel
     if request.user not in [session.requester, session.technician]:
@@ -230,7 +235,7 @@ def cancel_session(request, session_code):
 @require_POST
 def escalate_session(request, session_code):
     """Escalate a session to urgent and return to queue."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Only technician (or admin) can escalate
     if request.user != session.technician and not request.user.is_superuser:
@@ -266,7 +271,7 @@ def escalate_session(request, session_code):
 @login_required
 def my_sessions(request):
     """View user's support session history."""
-    sessions = RemoteSupportSession.objects.filter(requester=request.user)
+    sessions = RemoteSupportSession.objects.filter(requester=request.user, company=request.user.company)
     
     return render(request, 'remote_support/my_sessions.html', {
         'sessions': sessions,
@@ -277,7 +282,7 @@ def my_sessions(request):
 @require_POST
 def toggle_voice(request, session_code):
     """Toggle voice transcript status."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Check access
     if request.user != session.requester and request.user != session.technician:
@@ -295,7 +300,7 @@ def toggle_voice(request, session_code):
 @require_POST
 def save_transcript(request, session_code):
     """Save a chunk of voice transcript."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Check access
     if request.user != session.requester and request.user != session.technician:
@@ -316,7 +321,7 @@ def save_transcript(request, session_code):
 @login_required
 def get_full_transcript(request, session_code):
     """Get full voice transcript for the session."""
-    session = get_object_or_404(RemoteSupportSession, session_code=session_code)
+    session = get_object_or_404(RemoteSupportSession, session_code=session_code, company=request.user.company)
     
     # Check access
     if request.user != session.requester and request.user != session.technician:

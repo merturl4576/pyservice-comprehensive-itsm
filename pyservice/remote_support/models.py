@@ -67,6 +67,11 @@ class RemoteSupportSession(models.Model):
         help_text="Whether voice-to-text features are currently active"
     )
     
+    # Company (tenant)
+    company = models.ForeignKey(
+        'cmdb.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='support_sessions'
+    )
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_at = models.DateTimeField(null=True, blank=True)

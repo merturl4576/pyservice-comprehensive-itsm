@@ -14,8 +14,8 @@ from cmdb.models import User
 
 @login_required
 def incident_list(request):
-    """List all incidents with filtering."""
-    incidents = Incident.objects.all()
+    company = request.user.company
+    incidents = Incident.objects.filter(company=company)
     
     # Apply filters
     state = request.GET.get('state')
@@ -41,7 +41,7 @@ def incident_list(request):
 @login_required
 def incident_detail(request, pk):
     """View incident details."""
-    incident = get_object_or_404(Incident, pk=pk)
+    incident = get_object_or_404(Incident, pk=pk, company=request.user.company)
     return render(request, 'incidents/incident_detail.html', {'incident': incident})
 
 
@@ -55,6 +55,7 @@ def incident_create(request):
             # Non-admin users can only create incidents for themselves
             if request.user.role != 'admin':
                 incident.caller = request.user
+            incident.company = request.user.company
             incident.save()
             messages.success(request, 'Incident created successfully.')
             return redirect('incident_list')
@@ -64,8 +65,9 @@ def incident_create(request):
         if request.user.role != 'admin':
             form.initial['caller'] = request.user.pk
     
-    users = User.objects.all()
-    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'])
+    company = request.user.company
+    users = User.objects.filter(company=company)
+    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'], company=company)
     is_admin = request.user.role == 'admin'
     return render(request, 'incidents/incident_form.html', {
         'form': form,
@@ -78,7 +80,7 @@ def incident_create(request):
 @login_required
 def incident_update(request, pk):
     """Update existing incident."""
-    incident = get_object_or_404(Incident, pk=pk)
+    incident = get_object_or_404(Incident, pk=pk, company=request.user.company)
     if request.method == 'POST':
         form = IncidentForm(request.POST, instance=incident)
         if form.is_valid():
@@ -88,8 +90,9 @@ def incident_update(request, pk):
     else:
         form = IncidentForm(instance=incident)
     
-    users = User.objects.all()
-    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'])
+    company = request.user.company
+    users = User.objects.filter(company=company)
+    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'], company=company)
     is_admin = request.user.role == 'admin'
     return render(request, 'incidents/incident_form.html', {
         'form': form,
@@ -102,7 +105,7 @@ def incident_update(request, pk):
 @login_required
 def incident_claim(request, pk):
     """Support staff claims this incident - I'll handle it."""
-    incident = get_object_or_404(Incident, pk=pk)
+    incident = get_object_or_404(Incident, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only support roles can claim
         if request.user.role in ['it_support', 'technician', 'admin']:
@@ -118,7 +121,7 @@ def incident_claim(request, pk):
 @login_required
 def incident_complete(request, pk):
     """Mark incident as resolved."""
-    incident = get_object_or_404(Incident, pk=pk)
+    incident = get_object_or_404(Incident, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only assigned user or admin can complete
         if request.user == incident.assigned_to or request.user.role == 'admin':
@@ -134,7 +137,7 @@ def incident_complete(request, pk):
 @login_required
 def incident_escalate(request, pk):
     """Incident needs advanced help."""
-    incident = get_object_or_404(Incident, pk=pk)
+    incident = get_object_or_404(Incident, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only assigned user can escalate
         if request.user == incident.assigned_to or request.user.role == 'admin':
@@ -150,7 +153,7 @@ def incident_escalate(request, pk):
 @login_required
 def incident_delete(request, pk):
     """Delete an incident - Admin only."""
-    incident = get_object_or_404(Incident, pk=pk)
+    incident = get_object_or_404(Incident, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only admin can delete
         if request.user.role == 'admin':

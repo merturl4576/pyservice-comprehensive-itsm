@@ -103,6 +103,11 @@ class Incident(models.Model):
     resolution_notes = models.TextField(blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     
+    # Company (tenant)
+    company = models.ForeignKey(
+        'cmdb.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='incidents'
+    )
+    
     # Audit fields
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

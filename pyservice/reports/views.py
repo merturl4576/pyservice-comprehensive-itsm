@@ -29,17 +29,19 @@ def reports_dashboard(request):
     
     now = timezone.now()
     
+    company = request.user.company
+    
     # Basic stats for the report page
     context = {
-        'total_incidents': Incident.objects.count(),
-        'open_incidents': Incident.objects.exclude(state__in=['resolved', 'closed']).count(),
-        'total_requests': ServiceRequest.objects.count(),
-        'pending_requests': ServiceRequest.objects.filter(state='awaiting_approval').count(),
-        'total_assets': Asset.objects.count(),
-        'total_users': User.objects.count(),
-        'total_departments': Department.objects.count(),
-        'total_sessions': RemoteSupportSession.objects.count(),
-        'pending_sessions': RemoteSupportSession.objects.filter(status='pending').count(),
+        'total_incidents': Incident.objects.filter(company=company).count(),
+        'open_incidents': Incident.objects.filter(company=company).exclude(state__in=['resolved', 'closed']).count(),
+        'total_requests': ServiceRequest.objects.filter(company=company).count(),
+        'pending_requests': ServiceRequest.objects.filter(company=company, state='awaiting_approval').count(),
+        'total_assets': Asset.objects.filter(company=company).count(),
+        'total_users': User.objects.filter(company=company).count(),
+        'total_departments': Department.objects.filter(company=company).count(),
+        'total_sessions': RemoteSupportSession.objects.filter(company=company).count(),
+        'pending_sessions': RemoteSupportSession.objects.filter(company=company, status='pending').count(),
     }
     
     return render(request, 'reports/dashboard.html', context)
@@ -51,14 +53,16 @@ def export_incidents_csv(request):
     if request.user.role not in ['admin', 'manager']:
         return HttpResponse('Unauthorized', status=403)
     
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="incidents_{timezone.now().strftime("%Y%m%d")}.csv"'
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    filename = 'incidents_' + timezone.now().strftime('%Y%m%d') + '.csv'
+    response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    response.write('\ufeff')
     
     writer = csv.writer(response)
     writer.writerow(['Number', 'Title', 'State', 'Priority', 'Impact', 'Urgency', 
                      'Caller', 'Assigned To', 'Created At', 'Due Date', 'SLA Breached'])
     
-    incidents = Incident.objects.all().order_by('-created_at')
+    incidents = Incident.objects.filter(company=request.user.company).order_by('-created_at')
     for inc in incidents:
         writer.writerow([
             inc.number,
@@ -83,14 +87,16 @@ def export_requests_csv(request):
     if request.user.role not in ['admin', 'manager']:
         return HttpResponse('Unauthorized', status=403)
     
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="requests_{timezone.now().strftime("%Y%m%d")}.csv"'
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    filename = 'requests_' + timezone.now().strftime('%Y%m%d') + '.csv'
+    response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    response.write('\ufeff')
     
     writer = csv.writer(response)
     writer.writerow(['Number', 'Title', 'State', 'Request Type', 'Requester', 
                      'Assigned To', 'Created At', 'Approved At'])
     
-    requests = ServiceRequest.objects.all().order_by('-created_at')
+    requests = ServiceRequest.objects.filter(company=request.user.company).order_by('-created_at')
     for req in requests:
         writer.writerow([
             req.number,
@@ -112,14 +118,16 @@ def export_assets_csv(request):
     if request.user.role not in ['admin', 'manager']:
         return HttpResponse('Unauthorized', status=403)
     
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="assets_{timezone.now().strftime("%Y%m%d")}.csv"'
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    filename = 'assets_' + timezone.now().strftime('%Y%m%d') + '.csv'
+    response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    response.write('\ufeff')
     
     writer = csv.writer(response)
     writer.writerow(['Name', 'Type', 'Status', 'Serial Number', 'Assigned To', 
                      'Location', 'Purchase Date', 'Purchase Cost'])
     
-    assets = Asset.objects.all().order_by('-created_at')
+    assets = Asset.objects.filter(company=request.user.company).order_by('-created_at')
     for asset in assets:
         writer.writerow([
             asset.name,

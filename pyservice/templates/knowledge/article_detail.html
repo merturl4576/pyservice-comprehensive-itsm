@@ -17,6 +17,16 @@
                     {% if article.is_featured %}
                     <span class="badge bg-warning text-dark mb-2">Featured</span>
                     {% endif %}
+
+                    {% if user.role == 'admin' or user.is_superuser or user.department.name == 'IT Support' %}
+                    <div class="float-end">
+                        <a href="{% url 'kb_article_update' article.slug %}" class="btn btn-sm btn-outline-primary"><i
+                                class="bi bi-pencil"></i> Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                            data-bs-target="#deleteArticleModal"><i class="bi bi-trash"></i> Delete</button>
+                    </div>
+                    {% endif %}
+
                     <h1 class="display-6 fw-bold mb-3">{{ article.title }}</h1>
                     <div class="d-flex align-items-center text-muted small">
                         <div class="me-4">
@@ -37,7 +47,7 @@
                 <hr class="my-4">
 
                 <div class="article-content fs-5 lh-lg text-dark">
-                    {{ article.content|linebreaks }}
+                    {{ article.content|safe }}
                 </div>
             </div>
 
@@ -63,6 +73,29 @@
         {% endif %}
     </div>
 </div>
+
+{% if user.role == 'admin' or user.is_superuser or user.department.name == 'IT Support' %}
+<div class="modal fade" id="deleteArticleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete <strong>{{ article.title }}</strong>? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'kb_article_delete' article.slug %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Article</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
     function markHelpful(id) {

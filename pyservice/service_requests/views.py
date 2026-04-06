@@ -14,14 +14,14 @@ from cmdb.models import User
 @login_required
 def request_list(request):
     """List all service requests."""
-    requests = ServiceRequest.objects.all()
+    requests = ServiceRequest.objects.filter(company=request.user.company)
     return render(request, 'service_requests/request_list.html', {'requests': requests})
 
 
 @login_required
 def request_detail(request, pk):
     """View service request details."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     return render(request, 'service_requests/request_detail.html', {'request_obj': request_obj})
 
 
@@ -35,6 +35,7 @@ def request_create(request):
             # Non-admin users can only create requests for themselves
             if request.user.role != 'admin':
                 service_request.requester = request.user
+            service_request.company = request.user.company
             service_request.save()
             messages.success(request, 'Service request created successfully.')
             return redirect('request_list')
@@ -44,8 +45,9 @@ def request_create(request):
         if request.user.role != 'admin':
             form.initial['requester'] = request.user.pk
     
-    users = User.objects.all()
-    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'])
+    company = request.user.company
+    users = User.objects.filter(company=company)
+    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'], company=company)
     is_admin = request.user.role == 'admin'
     return render(request, 'service_requests/request_form.html', {
         'form': form,
@@ -58,7 +60,7 @@ def request_create(request):
 @login_required
 def request_update(request, pk):
     """Update existing service request."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         form = ServiceRequestForm(request.POST, instance=request_obj)
         if form.is_valid():
@@ -68,8 +70,9 @@ def request_update(request, pk):
     else:
         form = ServiceRequestForm(instance=request_obj)
     
-    users = User.objects.all()
-    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'])
+    company = request.user.company
+    users = User.objects.filter(company=company)
+    it_users = User.objects.filter(role__in=['it_support', 'technician', 'admin'], company=company)
     return render(request, 'service_requests/request_form.html', {
         'form': form,
         'users': users,
@@ -80,7 +83,7 @@ def request_update(request, pk):
 @login_required
 def request_submit(request, pk):
     """Submit request for approval."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         if request_obj.submit():
             messages.success(request, 'Request submitted for approval.')
@@ -92,7 +95,7 @@ def request_submit(request, pk):
 @login_required
 def request_approve(request, pk):
     """Approve a service request."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         if request_obj.approve(request.user):
             messages.success(request, 'Request approved.')
@@ -104,7 +107,7 @@ def request_approve(request, pk):
 @login_required
 def request_reject(request, pk):
     """Reject a service request."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         if request_obj.reject(request.user):
             messages.warning(request, 'Request rejected.')
@@ -116,7 +119,7 @@ def request_reject(request, pk):
 @login_required
 def request_claim(request, pk):
     """Support staff claims this request - I'll handle it."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only support roles can claim
         if request.user.role in ['it_support', 'technician', 'admin']:
@@ -132,7 +135,7 @@ def request_claim(request, pk):
 @login_required
 def request_complete(request, pk):
     """Mark request as completed."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only assigned user or admin can complete
         if request.user == request_obj.assigned_to or request.user.role == 'admin':
@@ -148,7 +151,7 @@ def request_complete(request, pk):
 @login_required
 def request_escalate(request, pk):
     """Request needs advanced help."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only assigned user can escalate
         if request.user == request_obj.assigned_to or request.user.role == 'admin':
@@ -164,7 +167,7 @@ def request_escalate(request, pk):
 @login_required
 def request_delete(request, pk):
     """Delete a service request - Admin only."""
-    request_obj = get_object_or_404(ServiceRequest, pk=pk)
+    request_obj = get_object_or_404(ServiceRequest, pk=pk, company=request.user.company)
     if request.method == 'POST':
         # Only admin can delete
         if request.user.role == 'admin':

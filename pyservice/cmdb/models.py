@@ -12,6 +12,31 @@ This module implements ITIL-compliant asset management functionality:
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.utils.text import slugify
+
+
+class Company(models.Model):
+    """
+    Tenant model for multi-company isolation.
+    Each company sees only its own data.
+    """
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
+    is_demo = models.BooleanField(default=False, help_text='Demo company with sample data')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Company'
+        verbose_name_plural = 'Companies'
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 
 class Department(models.Model):
@@ -19,9 +44,12 @@ class Department(models.Model):
     Organizational department for user grouping.
     ITIL: Part of organizational structure for incident routing.
     """
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     code = models.CharField(max_length=20, blank=True)
     description = models.TextField(blank=True)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, null=True, blank=True, related_name='departments'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -60,9 +88,17 @@ class User(AbstractUser):
         blank=True,
         related_name='users'
     )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='users'
+    )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
     phone = models.CharField(max_length=20, blank=True)
     employee_id = models.CharField(max_length=20, blank=True, unique=True, null=True)
+    is_super_admin = models.BooleanField(default=False, help_text='Platform super administrator')
     
     class Meta:
         verbose_name = 'User'
@@ -92,12 +128,16 @@ class AssetInventory(models.Model):
         ('printer', 'Printer'),
         ('network', 'Network Equipment'),
         ('software', 'Software License'),
+        ('other', 'Other'),
         ('custom', 'Custom Item'),
     ]
     
-    item_type = models.CharField(max_length=50, unique=True)
+    item_type = models.CharField(max_length=50)
     display_name = models.CharField(max_length=100, blank=True)
     quantity = models.PositiveIntegerField(default=0)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, null=True, blank=True, related_name='inventory'
+    )
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
@@ -159,6 +199,7 @@ class Asset(models.Model):
         ('printer', 'Printer'),
         ('network', 'Network Equipment'),
         ('software', 'Software License'),
+        ('other', 'Other'),
     ]
 
     STATUS_CHOICES = [
@@ -198,6 +239,9 @@ class Asset(models.Model):
     
     location = models.CharField(max_length=100, blank=True)
     notes = models.TextField(blank=True)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, null=True, blank=True, related_name='assets'
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

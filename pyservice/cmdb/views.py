@@ -13,8 +13,9 @@ from .forms import DepartmentForm, AssetForm
 @login_required
 def asset_list(request):
     """List all assets with inventory table."""
-    assets = Asset.objects.all()
-    inventory = AssetInventory.objects.all()
+    company = request.user.company
+    assets = Asset.objects.filter(company=company)
+    inventory = AssetInventory.objects.filter(company=company)
     return render(request, 'cmdb/asset_list.html', {
         'assets': assets,
         'inventory': inventory
@@ -28,7 +29,8 @@ def inventory_edit(request):
         messages.error(request, 'Only administrators can edit inventory.')
         return redirect('asset_list')
     
-    inventory = AssetInventory.objects.all()
+    company = request.user.company
+    inventory = AssetInventory.objects.filter(company=company)
     
     if request.method == 'POST':
         # Handle adding new custom item
@@ -42,13 +44,14 @@ def inventory_edit(request):
                     new_qty = int(new_item_qty) if new_item_qty else 0
                     if new_qty >= 0:
                         # Check if already exists
-                        if AssetInventory.objects.filter(item_type=item_type_key).exists():
+                        if AssetInventory.objects.filter(item_type=item_type_key, company=company).exists():
                             messages.warning(request, f'Item "{new_item_name}" already exists.')
                         else:
                             AssetInventory.objects.create(
                                 item_type=item_type_key,
                                 display_name=new_item_name,
-                                quantity=new_qty
+                                quantity=new_qty,
+                                company=company
                             )
                             messages.success(request, f'New item "{new_item_name}" added successfully.')
                 except ValueError:
@@ -61,7 +64,7 @@ def inventory_edit(request):
         if 'delete_item' in request.POST:
             item_type_to_delete = request.POST.get('delete_item')
             try:
-                item = AssetInventory.objects.get(item_type=item_type_to_delete)
+                item = AssetInventory.objects.get(item_type=item_type_to_delete, company=company)
                 item_name = item.get_display_name()
                 item.delete()
                 messages.success(request, f'Item "{item_name}" deleted successfully.')
@@ -89,7 +92,7 @@ def inventory_edit(request):
 @login_required
 def asset_detail(request, pk):
     """View asset details."""
-    asset = get_object_or_404(Asset, pk=pk)
+    asset = get_object_or_404(Asset, pk=pk, company=request.user.company)
     return render(request, 'cmdb/asset_detail.html', {'asset': asset})
 
 
@@ -102,6 +105,9 @@ def asset_create(request):
             asset = form.save(commit=False)
             asset_type = asset.asset_type
             
+            # Assign company
+            asset.company = request.user.company
+            
             # Non-admin: auto-assign to self
             if request.user.role != 'admin':
                 asset.assigned_to = request.user
@@ -109,10 +115,12 @@ def asset_create(request):
             else:
                 asset.created_by = request.user
             
-            # Check inventory availability
-            if AssetInventory.check_availability(asset_type):
+            # Check inventory availability in this company
+            inv_item = AssetInventory.objects.filter(item_type=asset_type, company=request.user.company).first()
+            if inv_item and inv_item.quantity > 0:
                 # Item in stock - decrement and assign
-                AssetInventory.decrement(asset_type)
+                inv_item.quantity -= 1
+                inv_item.save()
                 asset.status = 'assigned'
                 asset.save()
                 messages.success(request, f'Asset created and assigned! {asset.get_asset_type_display()} stock decremented.')
@@ -126,7 +134,7 @@ def asset_create(request):
     else:
         form = AssetForm()
     
-    users = User.objects.all()
+    users = User.objects.filter(company=request.user.company)
     is_admin = request.user.role == 'admin'
     return render(request, 'cmdb/asset_form.html', {
         'form': form,
@@ -138,7 +146,7 @@ def asset_create(request):
 @login_required
 def asset_update(request, pk):
     """Update existing asset."""
-    asset = get_object_or_404(Asset, pk=pk)
+    asset = get_object_or_404(Asset, pk=pk, company=request.user.company)
     if request.method == 'POST':
         form = AssetForm(request.POST, instance=asset)
         if form.is_valid():
@@ -148,7 +156,7 @@ def asset_update(request, pk):
     else:
         form = AssetForm(instance=asset)
     
-    users = User.objects.all()
+    users = User.objects.filter(company=request.user.company)
     is_admin = request.user.role == 'admin'
     return render(request, 'cmdb/asset_form.html', {
         'form': form,
@@ -160,7 +168,7 @@ def asset_update(request, pk):
 @login_required
 def asset_approve(request, pk):
     """Admin approves asset request."""
-    asset = get_object_or_404(Asset, pk=pk)
+    asset = get_object_or_404(Asset, pk=pk, company=request.user.company)
     if request.method == 'POST':
         if request.user.role == 'admin':
             if asset.approve():
@@ -175,7 +183,7 @@ def asset_approve(request, pk):
 @login_required
 def asset_decline(request, pk):
     """Admin declines asset request."""
-    asset = get_object_or_404(Asset, pk=pk)
+    asset = get_object_or_404(Asset, pk=pk, company=request.user.company)
     if request.method == 'POST':
         if request.user.role == 'admin':
             if asset.decline():
@@ -190,7 +198,7 @@ def asset_decline(request, pk):
 @login_required
 def asset_delete(request, pk):
     """Delete an asset - Admin only."""
-    asset = get_object_or_404(Asset, pk=pk)
+    asset = get_object_or_404(Asset, pk=pk, company=request.user.company)
     if request.method == 'POST':
         if request.user.role == 'admin':
             asset_name = asset.name
@@ -204,14 +212,14 @@ def asset_delete(request, pk):
 @login_required
 def department_list(request):
     """List departments - admins see all, others see only their own."""
-    is_admin = request.user.role == 'admin'
+    is_admin = request.user.role == 'admin' or request.user.is_superuser
     
     if is_admin:
         # Admin sees all departments with members
-        departments = Department.objects.all().prefetch_related('users')
+        departments = Department.objects.filter(company=request.user.company).prefetch_related('users')
     else:
         # Non-admin users see only their own department
-        if request.user.department:
+        if request.user.department and request.user.department.company == request.user.company:
             departments = Department.objects.filter(pk=request.user.department.pk).prefetch_related('users')
         else:
             departments = Department.objects.none()
@@ -225,13 +233,15 @@ def department_list(request):
 @login_required
 def department_create(request):
     """Create new department - Admin only."""
-    if request.user.role != 'admin':
+    if request.user.role != 'admin' and not request.user.is_superuser:
         messages.error(request, 'Only administrators can create departments.')
-        return redirect('asset_list')
+        return redirect('department_list')
     if request.method == 'POST':
         form = DepartmentForm(request.POST)
         if form.is_valid():
-            form.save()
+            dept = form.save(commit=False)
+            dept.company = request.user.company
+            dept.save()
             messages.success(request, 'Department created successfully.')
             return redirect('department_list')
     else:
@@ -243,10 +253,10 @@ def department_create(request):
 @login_required
 def department_update(request, pk):
     """Update existing department - Admin only."""
-    if request.user.role != 'admin':
+    if request.user.role != 'admin' and not request.user.is_superuser:
         messages.error(request, 'Only administrators can edit departments.')
-        return redirect('asset_list')
-    department = get_object_or_404(Department, pk=pk)
+        return redirect('department_list')
+    department = get_object_or_404(Department, pk=pk, company=request.user.company)
     if request.method == 'POST':
         form = DepartmentForm(request.POST, instance=department)
         if form.is_valid():
@@ -262,11 +272,11 @@ def department_update(request, pk):
 @login_required
 def department_delete(request, pk):
     """Delete a department - Admin only."""
-    if request.user.role != 'admin':
+    if request.user.role != 'admin' and not request.user.is_superuser:
         messages.error(request, 'Only administrators can delete departments.')
         return redirect('department_list')
     
-    department = get_object_or_404(Department, pk=pk)
+    department = get_object_or_404(Department, pk=pk, company=request.user.company)
     if request.method == 'POST':
         try:
             department_name = department.name
@@ -275,5 +285,31 @@ def department_delete(request, pk):
         except Exception as e:
             messages.error(request, f'Error deleting department: {str(e)}')
     
+    
+    return redirect('department_list')
+
+
+@login_required
+def department_user_move(request, user_id):
+    """Move a user to a different department - Admin only."""
+    if request.user.role != 'admin' and not request.user.is_superuser:
+        messages.error(request, 'Only administrators can move users.')
+        return redirect('department_list')
+        
+    if request.method == 'POST':
+        target_user = get_object_or_404(User, pk=user_id, company=request.user.company)
+        new_dept_id = request.POST.get('department_id')
+        
+        if new_dept_id:
+            try:
+                new_dept = get_object_or_404(Department, pk=new_dept_id, company=request.user.company)
+                target_user.department = new_dept
+                target_user.save()
+                messages.success(request, f'User {target_user.get_full_name() or target_user.username} moved to {new_dept.name}.')
+            except Exception as e:
+                messages.error(request, f'Error moving user: {str(e)}')
+        else:
+            messages.error(request, 'Please select a department.')
+            
     return redirect('department_list')
 
